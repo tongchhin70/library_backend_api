@@ -1,0 +1,6 @@
+library_backend_api/bin/
+library_backend_api/obj/
+.vs/
+.vscode/
+*.user
+*.suo
