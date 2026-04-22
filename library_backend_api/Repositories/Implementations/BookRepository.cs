@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace library_backend_api.Repositories.Implementations;
 
-// Book repository keeps EF Core queries and SQL details out of the service layer.
 public class BookRepository(AppDbContext context) : IBookRepository
 {
     public Task<List<Book>> GetAllAsync() =>
@@ -38,7 +37,6 @@ public class BookRepository(AppDbContext context) : IBookRepository
 
     public async Task<bool> TryBorrowCopyAsync(int bookId)
     {
-        // Decrement only when a copy is still available so concurrent borrowers cannot push below zero.
         var affectedRows = await context.Database.ExecuteSqlInterpolatedAsync($@"
 UPDATE Books
 SET AvailableCopies = AvailableCopies - 1
@@ -48,7 +46,6 @@ WHERE Id = {bookId} AND AvailableCopies > 0");
     }
 
     public Task IncrementAvailableCopiesAsync(int bookId) =>
-        // Returning a book simply adds one copy back to the stored count.
         context.Database.ExecuteSqlInterpolatedAsync($@"
 UPDATE Books
 SET AvailableCopies = AvailableCopies + 1
