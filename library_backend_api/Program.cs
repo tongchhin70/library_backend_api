@@ -7,6 +7,7 @@ using library_backend_api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Register MVC, Swagger, and in-memory caching for the API.
@@ -43,6 +44,10 @@ builder.Services.AddScoped<IBorrowRecordRepository, BorrowRecordRepository>();
 
 // Register services for business rules.
 builder.Services.AddScoped<IBorrowRecordService, BorrowRecordService>();
+
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<IBookService, BookService>();
 
 var app = builder.Build();
 
