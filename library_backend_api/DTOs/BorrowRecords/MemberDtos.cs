@@ -1,4 +1,6 @@
 namespace library_backend_api.DTOs.Members;
+using System.ComponentModel.DataAnnotations;
+
 
 public class MemberResponseDto
 {
