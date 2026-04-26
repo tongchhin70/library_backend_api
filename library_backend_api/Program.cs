@@ -48,6 +48,7 @@ builder.Services.AddScoped<IBorrowRecordService, BorrowRecordService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IMemberService, MemberService>(); 
 
 var app = builder.Build();
 
