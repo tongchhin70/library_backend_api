@@ -1,5 +1,6 @@
 using library_backend_api.DTOs.Members;
 using library_backend_api.Entities;
+using library_backend_api.Exceptions;
 using library_backend_api.Repositories.Interfaces;
 using library_backend_api.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
@@ -28,17 +29,20 @@ public class MemberService(IMemberRepository repository, IBorrowRecordRepository
         return dtos;
     }
 
-    public async Task<MemberResponseDto?> GetMemberByIdAsync(int id)
+    public async Task<MemberResponseDto> GetMemberByIdAsync(int id)
     {
-        var member = await repository.GetByIdAsync(id);
-        return member == null ? null : MapToDto(member);
+        var member = await repository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Member with ID {id} not found.");
+
+        return MapToDto(member);
     }
 
     public async Task<MemberResponseDto> CreateMemberAsync(MemberCreateDto dto)
     {
         if (await repository.ExistsByEmailAsync(dto.Email))
         {
-            throw new InvalidOperationException($"A member with email {dto.Email} already exists.");
+            //duplicate email is not a server crash. It is a conflict with existing data.
+            throw new ConflictException($"A member with email {dto.Email} already exists.");
         }
 
         var member = new Member
@@ -56,14 +60,14 @@ public class MemberService(IMemberRepository repository, IBorrowRecordRepository
         return MapToDto(createdMember);
     }
 
-    public async Task<bool> UpdateMemberAsync(int id, MemberUpdateDto dto)
+    public async Task UpdateMemberAsync(int id, MemberUpdateDto dto)
     {
-        var existingMember = await repository.GetByIdAsync(id);
-        if (existingMember == null) return false;
+        var existingMember = await repository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Member with ID {id} not found.");
 
         if (await repository.ExistsByEmailAsync(dto.Email, id))
         {
-            throw new InvalidOperationException($"Another member with email {dto.Email} already exists.");
+            throw new ConflictException($"Another member with email {dto.Email} already exists.");
         }
 
         existingMember.FullName = dto.FullName;
@@ -73,27 +77,24 @@ public class MemberService(IMemberRepository repository, IBorrowRecordRepository
 
         // INVALIDATE CACHE
         cache.Remove(AllMembersCacheKey);
-
-        return true;
     }
 
-    public async Task<bool> DeleteMemberAsync(int id)
+    public async Task DeleteMemberAsync(int id)
     {
-        var member = await repository.GetByIdAsync(id);
-        if (member == null) return false;
+        var member = await repository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Member with ID {id} not found.");
 
         // Prevent deletion if the member has any borrow history.
         if (await borrowRecordRepository.HasBorrowHistoryForMemberAsync(id))
         {
-            throw new InvalidOperationException("Cannot delete a member with existing borrow history.");
+            // Deleting a member with borrow history is a conflict with data integrity rules.
+            throw new ConflictException("Cannot delete a member with existing borrow history.");
         }
 
         await repository.DeleteAsync(member);
 
         // INVALIDATE CACHE
         cache.Remove(AllMembersCacheKey);
-
-        return true;
     }
 
     private static MemberResponseDto MapToDto(Member member)

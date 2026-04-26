@@ -1,5 +1,6 @@
 using library_backend_api.DTOs;
 using library_backend_api.Entities;
+using library_backend_api.Exceptions;
 using library_backend_api.Repositories.Interfaces;
 using library_backend_api.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
@@ -28,17 +29,20 @@ public class BookService(IBookRepository repository, IMemoryCache cache) : IBook
         return dtos;
     }
 
-    public async Task<BookResponseDto?> GetBookByIdAsync(int id)
+    public async Task<BookResponseDto> GetBookByIdAsync(int id)
     {
-        var book = await repository.GetByIdAsync(id);
-        return book == null ? null : MapToDto(book);
+        var book = await repository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Book with ID {id} not found.");
+
+        return MapToDto(book);
     }
 
     public async Task<BookResponseDto> CreateBookAsync(BookCreateDto dto)
     {
         if (await repository.ExistsByIsbnAsync(dto.ISBN))
         {
-            throw new InvalidOperationException($"A book with ISBN {dto.ISBN} already exists.");
+            //duplicate ISBN is not a server crash. It is a conflict with existing data.
+            throw new ConflictException($"A book with ISBN {dto.ISBN} already exists.");
         }
 
         var book = new Book
@@ -58,14 +62,14 @@ public class BookService(IBookRepository repository, IMemoryCache cache) : IBook
         return MapToDto(createdBook);
     }
 
-    public async Task<bool> UpdateBookAsync(int id, BookUpdateDto dto)
+    public async Task UpdateBookAsync(int id, BookUpdateDto dto)
     {
-        var existingBook = await repository.GetByIdAsync(id);
-        if (existingBook == null) return false;
+        var existingBook = await repository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Book with ID {id} not found.");
 
         if (await repository.ExistsByIsbnAsync(dto.ISBN, id))
         {
-            throw new InvalidOperationException($"Another book with ISBN {dto.ISBN} already exists.");
+            throw new ConflictException($"Another book with ISBN {dto.ISBN} already exists.");
         }
 
         existingBook.Title = dto.Title;
@@ -79,21 +83,17 @@ public class BookService(IBookRepository repository, IMemoryCache cache) : IBook
         
         // INVALIDATE CACHE
         cache.Remove(AllBooksCacheKey);
-        
-        return true;
     }
 
-    public async Task<bool> DeleteBookAsync(int id)
+    public async Task DeleteBookAsync(int id)
     {
-        var book = await repository.GetByIdAsync(id);
-        if (book == null) return false;
+        var book = await repository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Book with ID {id} not found.");
 
         await repository.DeleteAsync(book);
         
         // INVALIDATE CACHE
         cache.Remove(AllBooksCacheKey);
-        
-        return true;
     }
 
     private static BookResponseDto MapToDto(Book book)
@@ -108,4 +108,5 @@ public class BookService(IBookRepository repository, IMemoryCache cache) : IBook
             AvailableCopies = book.AvailableCopies
         };
     }
+
 }

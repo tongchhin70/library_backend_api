@@ -25,10 +25,10 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         // Map known application exceptions to the right HTTP status codes.
         context.Response.StatusCode = exception switch
         {
-            NotFoundException => (int)HttpStatusCode.NotFound,
-            BadRequestException => (int)HttpStatusCode.BadRequest,
-            ConflictException => (int)HttpStatusCode.Conflict,
-            _ => (int)HttpStatusCode.InternalServerError
+            NotFoundException => (int)HttpStatusCode.NotFound, //If the exception is NotFoundException, return 404.
+            BadRequestException => (int)HttpStatusCode.BadRequest, //If the exception is BadRequestException, return 400. 
+            ConflictException => (int)HttpStatusCode.Conflict, //If the exception is ConflictException, return 409.
+            _ => (int)HttpStatusCode.InternalServerError //If anything else, return 500 Internal Server Error.
         };
 
         var message = context.Response.StatusCode == (int)HttpStatusCode.InternalServerError

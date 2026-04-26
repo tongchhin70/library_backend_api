@@ -6,8 +6,8 @@ namespace library_backend_api.Services.Interfaces;
 public interface IMemberService
 {
     Task<IEnumerable<MemberResponseDto>> GetAllMembersAsync();
-    Task<MemberResponseDto?> GetMemberByIdAsync(int id);
+    Task<MemberResponseDto> GetMemberByIdAsync(int id);
     Task<MemberResponseDto> CreateMemberAsync(MemberCreateDto dto);
-    Task<bool> UpdateMemberAsync(int id, MemberUpdateDto dto);
-    Task<bool> DeleteMemberAsync(int id);
+    Task UpdateMemberAsync(int id, MemberUpdateDto dto);
+    Task DeleteMemberAsync(int id);
 }

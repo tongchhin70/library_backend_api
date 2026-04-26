@@ -11,6 +11,7 @@ public class MembersController(IMemberService memberService) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllMembers()
     {
+        // This endpoint retrieves all members. It uses caching in the service layer to improve performance.
         var members = await memberService.GetAllMembersAsync();
         return Ok(members);
     }
@@ -19,8 +20,6 @@ public class MembersController(IMemberService memberService) : ControllerBase
     public async Task<IActionResult> GetMemberById(int id)
     {
         var member = await memberService.GetMemberByIdAsync(id);
-        if (member == null) return NotFound(new { error = $"Member with ID {id} not found." });
-
         return Ok(member);
     }
 
@@ -34,18 +33,14 @@ public class MembersController(IMemberService memberService) : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateMember(int id, [FromBody] MemberUpdateDto dto)
     {
-        var updated = await memberService.UpdateMemberAsync(id, dto);
-        if (!updated) return NotFound(new { error = $"Member with ID {id} not found." });
-
+        await memberService.UpdateMemberAsync(id, dto);
         return NoContent();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteMember(int id)
     {
-        var deleted = await memberService.DeleteMemberAsync(id);
-        if (!deleted) return NotFound(new { error = $"Member with ID {id} not found." });
-
+        await memberService.DeleteMemberAsync(id);
         return NoContent();
     }
 }
