@@ -12,12 +12,19 @@ public class MemberResponseDto
 
 public class MemberCreateDto
 {
+    [Required(ErrorMessage = "FullName is required.")]
     public string FullName { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Invalid email format.")]
     public string Email { get; set; } = string.Empty;
 }
 
 public class MemberUpdateDto
 {
+
+    [Required(ErrorMessage = "FullName is required.")]
     public string FullName { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Invalid email format.")]
     public string Email { get; set; } = string.Empty;
 }
